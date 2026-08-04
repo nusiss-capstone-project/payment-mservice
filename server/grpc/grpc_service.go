@@ -3,15 +3,15 @@ package grpc
 import (
 	"context"
 
-	"github.com/__TEMPLATE_ORG__/__TEMPLATE_REPO__/common/__PROTO_PACKAGE__"
-	"github.com/__TEMPLATE_ORG__/__TEMPLATE_REPO__/server/log"
+	"github.com/nusiss-capstone-project/payment-mservice/common/paymentpb"
+	"github.com/nusiss-capstone-project/payment-mservice/server/log"
 )
 
-type X_GRPC_SERVICE__ struct {
-	__PROTO_PACKAGE__.UnimplementedX_GRPC_SERVICE__Server
+type PaymentService struct {
+	paymentpb.UnimplementedPaymentServiceServer
 }
 
-func (s *X_GRPC_SERVICE__) SayHello(ctx context.Context, in *__PROTO_PACKAGE__.HelloRequest) (*__PROTO_PACKAGE__.HelloResponse, error) {
+func (s *PaymentService) SayHello(ctx context.Context, in *paymentpb.HelloRequest) (*paymentpb.HelloResponse, error) {
 	log.Logger.Infof("Received: %v", in.GetName())
-	return &__PROTO_PACKAGE__.HelloResponse{Message: "Hello " + in.GetName()}, nil
+	return &paymentpb.HelloResponse{Message: "Hello " + in.GetName()}, nil
 }

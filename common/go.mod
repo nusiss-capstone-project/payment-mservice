@@ -1,6 +1,6 @@
-module github.com/__TEMPLATE_ORG__/__TEMPLATE_REPO__/common
+module github.com/nusiss-capstone-project/payment-mservice/common
 
-go __GO_VERSION__
+go 1.25.10
 
 require (
 	google.golang.org/grpc v1.79.3
