@@ -39,8 +39,12 @@ func NewRouter() *gin.Engine {
 				"message": "pong",
 			})
 		})
-		basicGroup.POST("/items", commonauth.RequireUser(), api.CreateItem)
-		basicGroup.GET("/items/:item_id", commonauth.RequireUser(), api.GetItems)
+		webGroup := basicGroup.Group("/web")
+
+		webGroup.POST("/payment-methods", commonauth.RequireUser(), api.AddPaymentMethod)
+		webGroup.GET("/payment-methods", commonauth.RequireUser(), api.ListPaymentMethods)
+		webGroup.GET("/transactions/:payment_id", commonauth.RequireUser(), api.GetTransaction)
+		basicGroup.POST("/stripe/webhook", api.StripeWebhook)
 	}
 	return r
 }

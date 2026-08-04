@@ -36,6 +36,9 @@ func Init() {
 	}
 	err = DB.AutoMigrate(
 		&model.Item{},
+		&model.UserPaymentAccount{},
+		&model.UserPaymentMethod{},
+		&model.Transaction{},
 	)
 	if err != nil {
 		panic(err)
