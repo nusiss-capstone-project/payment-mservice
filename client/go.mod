@@ -3,7 +3,7 @@ module github.com/nusiss-capstone-project/payment-mservice/client
 go 1.25.10
 
 require (
-	github.com/nusiss-capstone-project/payment-mservice/common v0.0.1
+	github.com/nusiss-capstone-project/payment-mservice/common v0.0.2-alpha.1
 	google.golang.org/grpc v1.82.1
 )
 

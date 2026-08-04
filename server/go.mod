@@ -7,7 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/nusiss-capstone-project/identity-mservice/client v0.0.3-alpha1
 	github.com/nusiss-capstone-project/identity-mservice/common v0.0.3-alpha1
-	github.com/nusiss-capstone-project/payment-mservice/common v0.0.1
+	github.com/nusiss-capstone-project/payment-mservice/common v0.0.2-alpha.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v75 v75.11.0
@@ -112,5 +112,3 @@ require (
 )
 
 replace gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
-
-replace github.com/nusiss-capstone-project/payment-mservice/common => ../common
