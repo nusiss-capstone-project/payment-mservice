@@ -5,13 +5,16 @@ go 1.25.10
 require (
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
-	github.com/nusiss-capstone-project/identity-mservice/common v0.0.2-alpha.4
+	github.com/nusiss-capstone-project/identity-mservice/client v0.0.3-alpha1
+	github.com/nusiss-capstone-project/identity-mservice/common v0.0.3-alpha1
 	github.com/nusiss-capstone-project/payment-mservice/common v0.0.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
+	github.com/stripe/stripe-go/v75 v75.11.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
+	github.com/twmb/franz-go v1.18.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.68.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.68.0
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.68.0
@@ -25,6 +28,12 @@ require (
 	google.golang.org/grpc v1.82.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.0
+)
+
+require (
+	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.9.0 // indirect
 )
 
 require (
@@ -103,3 +112,5 @@ require (
 )
 
 replace gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
+
+replace github.com/nusiss-capstone-project/payment-mservice/common => ../common

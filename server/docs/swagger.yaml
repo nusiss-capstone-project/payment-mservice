@@ -1,4 +1,9 @@
 definitions:
+  data.AddPaymentMethodResponse:
+    properties:
+      redirect_url:
+        type: string
+    type: object
   data.BaseResponse:
     properties:
       code:
@@ -15,6 +20,21 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  data.PaymentMethodVO:
+    properties:
+      brand:
+        type: string
+      created_at:
+        type: integer
+      last4:
+        type: string
+      payment_method_id:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
     type: object
 info:
   contact: {}
@@ -79,4 +99,85 @@ paths:
       summary: Item Query with ID
       tags:
       - Item
+  /payment-ms/v1/stripe/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Receive Stripe webhook events (checkout.session.completed for setup).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: Stripe webhook
+      tags:
+      - Payment
+  /payment-ms/v1/web/payment-methods:
+    get:
+      description: List bound payment methods for the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/data.BaseResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/data.PaymentMethodVO'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: List payment methods
+      tags:
+      - Payment
+    post:
+      description: Create Stripe setup checkout session for binding a card. Fails
+        if user already has one.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/data.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/data.AddPaymentMethodResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: Add payment method
+      tags:
+      - Payment
 swagger: "2.0"

@@ -10,7 +10,9 @@ import (
 	"github.com/nusiss-capstone-project/payment-mservice/server/config"
 	"github.com/nusiss-capstone-project/payment-mservice/server/grpc"
 	"github.com/nusiss-capstone-project/payment-mservice/server/http"
+	"github.com/nusiss-capstone-project/payment-mservice/server/kafka/producer"
 	"github.com/nusiss-capstone-project/payment-mservice/server/log"
+	"github.com/nusiss-capstone-project/payment-mservice/server/proxy"
 	"github.com/nusiss-capstone-project/payment-mservice/server/repository"
 	"github.com/nusiss-capstone-project/payment-mservice/server/telemetry"
 )
@@ -23,6 +25,9 @@ func main() {
 	config.Init()
 	log.InitLogger()
 	repository.Init()
+	proxy.InitStripe()
+	proxy.InitUserProxy()
+	producer.Ensure()
 
 	shutdownTelemetry := telemetry.Init(context.Background())
 	defer func() {
