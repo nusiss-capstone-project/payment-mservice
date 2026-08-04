@@ -249,6 +249,65 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/payment-ms/v1/web/transactions/{payment_id}": {
+            "get": {
+                "description": "Query transaction success/failure status by payment_id.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Get transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Local payment id",
+                        "name": "payment_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/data.BaseResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/data.TransactionVO"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/data.BaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/data.BaseResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/data.BaseResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -295,6 +354,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "integer"
                 },
+                "id": {
+                    "type": "integer"
+                },
                 "last4": {
                     "type": "string"
                 },
@@ -305,6 +367,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "data.TransactionVO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "biz_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "payment_id": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }
