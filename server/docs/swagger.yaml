@@ -27,6 +27,8 @@ definitions:
         type: string
       created_at:
         type: integer
+      id:
+        type: integer
       last4:
         type: string
       payment_method_id:
@@ -34,6 +36,21 @@ definitions:
       status:
         type: string
       type:
+        type: string
+    type: object
+  data.TransactionVO:
+    properties:
+      amount:
+        type: integer
+      biz_id:
+        type: string
+      created_at:
+        type: integer
+      currency:
+        type: string
+      payment_id:
+        type: string
+      status:
         type: string
     type: object
 info:
@@ -178,6 +195,42 @@ paths:
           schema:
             $ref: '#/definitions/data.BaseResponse'
       summary: Add payment method
+      tags:
+      - Payment
+  /payment-ms/v1/web/transactions/{payment_id}:
+    get:
+      description: Query transaction success/failure status by payment_id.
+      parameters:
+      - description: Local payment id
+        in: path
+        name: payment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/data.BaseResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/data.TransactionVO'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: Get transaction
       tags:
       - Payment
 swagger: "2.0"
