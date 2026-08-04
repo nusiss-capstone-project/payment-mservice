@@ -1,8 +1,13 @@
 package router
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	commonauth "github.com/nusiss-capstone-project/identity-mservice/common/auth"
+	"github.com/nusiss-capstone-project/payment-mservice/server/config"
 	_ "github.com/nusiss-capstone-project/payment-mservice/server/docs"
 	"github.com/nusiss-capstone-project/payment-mservice/server/http/api"
 	"github.com/nusiss-capstone-project/payment-mservice/server/http/data"
@@ -34,24 +39,24 @@ func NewRouter() *gin.Engine {
 				"message": "pong",
 			})
 		})
-		basicGroup.POST("/items", api.CreateItem)
-		basicGroup.GET("/items/:item_id", api.GetItems)
+		basicGroup.POST("/items", commonauth.RequireUser(), api.CreateItem)
+		basicGroup.GET("/items/:item_id", commonauth.RequireUser(), api.GetItems)
 	}
 	return r
 }
-
 
 func corsMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins: allowedOrigins(),
 		AllowMethods: []string{
-			"GET", "POST", "PUT", "DELETE", "OPTIONS",
+			"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS",
 		},
 		AllowHeaders: []string{
-			"Origin", "Content-Type", "Accept", "Authorization", log.RequestIDHeader,
+			"Origin", "Content-Type", "Accept", "Authorization",
+			commonauth.HeaderInternalUserID, commonauth.HeaderUserRole, log.RequestIDHeader,
 		},
 		ExposeHeaders: []string{
-			"Content-Length", log.RequestIDHeader,
+			"Content-Length", commonauth.HeaderInternalUserID, commonauth.HeaderUserRole, log.RequestIDHeader,
 		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
