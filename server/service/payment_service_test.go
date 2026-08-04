@@ -191,7 +191,8 @@ func TestCreatePayment_Success(t *testing.T) {
 	stripeProxy := new(proxymocks.StripeProxy)
 	methodDAO := new(daomocks.PaymentMethodDAO)
 	txDAO := new(daomocks.TransactionDAO)
-	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, nil)
+	txProducer := new(mockPaymentTransactionUpdatedProducer)
+	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, txProducer)
 
 	txDAO.On("GetByBizID", mock.Anything, "biz-1").Return(nil, nil)
 	methodDAO.On("GetByID", mock.Anything, int64(9)).Return(&model.UserPaymentMethod{
@@ -220,6 +221,13 @@ func TestCreatePayment_Success(t *testing.T) {
 			tx.Status == model.TransactionStatusSucceeded &&
 			len(tx.PaymentID) == 16
 	})).Return(nil)
+	txProducer.On("PublishPaymentTransactionUpdated", mock.Anything, mock.MatchedBy(func(e producer.PaymentTransactionUpdatedEvent) bool {
+		return e.UserID == 42 &&
+			e.BizID == "biz-1" &&
+			e.EventType == producer.PaymentSucceededEventType &&
+			e.Status == model.TransactionStatusSucceeded &&
+			len(e.PaymentID) == 16
+	})).Return(nil)
 
 	result, err := svc.CreatePayment(context.Background(), CreatePaymentInput{
 		BizID:           "biz-1",
@@ -231,7 +239,7 @@ func TestCreatePayment_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, model.TransactionStatusSucceeded, result.Status)
 	require.Len(t, result.PaymentID, 16)
-	mock.AssertExpectationsForObjects(t, stripeProxy, methodDAO, txDAO)
+	mock.AssertExpectationsForObjects(t, stripeProxy, methodDAO, txDAO, txProducer)
 }
 
 func TestCreatePayment_Idempotent(t *testing.T) {
@@ -475,7 +483,8 @@ func TestCreatePayment_DefaultCurrencyAndPendingStatus(t *testing.T) {
 	stripeProxy := new(proxymocks.StripeProxy)
 	methodDAO := new(daomocks.PaymentMethodDAO)
 	txDAO := new(daomocks.TransactionDAO)
-	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, nil)
+	txProducer := new(mockPaymentTransactionUpdatedProducer)
+	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, txProducer)
 
 	txDAO.On("GetByBizID", mock.Anything, "biz-2").Return(nil, nil)
 	methodDAO.On("GetByID", mock.Anything, int64(9)).Return(&model.UserPaymentMethod{
@@ -493,6 +502,61 @@ func TestCreatePayment_DefaultCurrencyAndPendingStatus(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, model.TransactionStatusPending, result.Status)
+	txProducer.AssertNotCalled(t, "PublishPaymentTransactionUpdated", mock.Anything, mock.Anything)
+}
+
+func TestCreatePayment_FailedStatus_NoKafka(t *testing.T) {
+	initPaymentTestEnv()
+	stripeProxy := new(proxymocks.StripeProxy)
+	methodDAO := new(daomocks.PaymentMethodDAO)
+	txDAO := new(daomocks.TransactionDAO)
+	txProducer := new(mockPaymentTransactionUpdatedProducer)
+	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, txProducer)
+
+	txDAO.On("GetByBizID", mock.Anything, "biz-fail").Return(nil, nil)
+	methodDAO.On("GetByID", mock.Anything, int64(9)).Return(&model.UserPaymentMethod{
+		ID: 9, UserID: 42, ProviderCustomerID: "cus_1", ProviderPaymentMethodID: "pm_1", Status: model.PaymentMethodStatusActive,
+	}, nil)
+	stripeProxy.On("CreatePayment", mock.Anything, mock.Anything).Return(&proxy.Payment{ID: "pi_fail", Status: "canceled"}, nil)
+	txDAO.On("Create", mock.Anything, mock.MatchedBy(func(tx *model.Transaction) bool {
+		return tx.Status == model.TransactionStatusFailed
+	})).Return(nil)
+
+	result, err := svc.CreatePayment(context.Background(), CreatePaymentInput{
+		BizID: "biz-fail", UserID: 42, Amount: 100, PaymentMethodID: 9,
+	})
+	require.NoError(t, err)
+	require.Equal(t, model.TransactionStatusFailed, result.Status)
+	txProducer.AssertNotCalled(t, "PublishPaymentTransactionUpdated", mock.Anything, mock.Anything)
+}
+
+func TestCreatePayment_PublishSucceededEventFailed(t *testing.T) {
+	initPaymentTestEnv()
+	stripeProxy := new(proxymocks.StripeProxy)
+	methodDAO := new(daomocks.PaymentMethodDAO)
+	txDAO := new(daomocks.TransactionDAO)
+	txProducer := new(mockPaymentTransactionUpdatedProducer)
+	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, txDAO, nil, txProducer)
+
+	txDAO.On("GetByBizID", mock.Anything, "biz-kafka-fail").Return(nil, nil)
+	methodDAO.On("GetByID", mock.Anything, int64(9)).Return(&model.UserPaymentMethod{
+		ID: 9, UserID: 42, ProviderCustomerID: "cus_1", ProviderPaymentMethodID: "pm_1", Status: model.PaymentMethodStatusActive,
+	}, nil)
+	stripeProxy.On("CreatePayment", mock.Anything, mock.Anything).Return(&proxy.Payment{ID: "pi_ok", Status: "succeeded"}, nil)
+	txDAO.On("Create", mock.Anything, mock.MatchedBy(func(tx *model.Transaction) bool {
+		return tx.Status == model.TransactionStatusSucceeded
+	})).Return(nil)
+	txProducer.On("PublishPaymentTransactionUpdated", mock.Anything, mock.MatchedBy(func(e producer.PaymentTransactionUpdatedEvent) bool {
+		return e.EventType == producer.PaymentSucceededEventType && e.BizID == "biz-kafka-fail"
+	})).Return(errors.New("kafka down"))
+
+	result, err := svc.CreatePayment(context.Background(), CreatePaymentInput{
+		BizID: "biz-kafka-fail", UserID: 42, Amount: 100, PaymentMethodID: 9,
+	})
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.Contains(t, err.Error(), "publish payment succeeded event")
+	mock.AssertExpectationsForObjects(t, stripeProxy, methodDAO, txDAO, txProducer)
 }
 
 func TestCreatePayment_StripeFailedAndSaveFailed(t *testing.T) {

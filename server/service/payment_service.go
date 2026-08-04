@@ -216,6 +216,30 @@ func (p *PaymentServiceImpl) CreatePayment(ctx context.Context, in CreatePayment
 		"provider_payment_id", stripePayment.ID,
 		"status", status,
 	)
+
+	// Sync RPC: publish Kafka only on success; failures are ignored.
+	if status == model.TransactionStatusSucceeded {
+		if err := p.paymentTransactionUpdatedProducer.PublishPaymentTransactionUpdated(ctx, producer.PaymentTransactionUpdatedEvent{
+			UserID:    in.UserID,
+			PaymentID: paymentID,
+			BizID:     in.BizID,
+			EventType: producer.PaymentSucceededEventType,
+			Provider:  model.ProviderStripe,
+			Status:    status,
+		}); err != nil {
+			log.WithContext(ctx).Errorw("publish payment succeeded event failed",
+				"payment_id", paymentID,
+				"biz_id", in.BizID,
+				"error", err,
+			)
+			return nil, fmt.Errorf("publish payment succeeded event: %w", err)
+		}
+		log.WithContext(ctx).Infow("payment succeeded event published",
+			"payment_id", paymentID,
+			"biz_id", in.BizID,
+		)
+	}
+
 	return &CreatePaymentResult{
 		PaymentID: paymentID,
 		Status:    status,
