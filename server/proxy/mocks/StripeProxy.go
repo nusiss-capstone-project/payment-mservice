@@ -164,9 +164,9 @@ func (_m *StripeProxy) GetPaymentMethodBySetupIntent(ctx context.Context, setupI
 	return r0, r1
 }
 
-// ParseWebhookEvent provides a mock function with given fields: payload, signature
-func (_m *StripeProxy) ParseWebhookEvent(payload []byte, signature string) (*proxy.WebhookEvent, error) {
-	ret := _m.Called(payload, signature)
+// ParseWebhookEvent provides a mock function with given fields: ctx, payload, signature
+func (_m *StripeProxy) ParseWebhookEvent(ctx context.Context, payload []byte, signature string) (*proxy.WebhookEvent, error) {
+	ret := _m.Called(ctx, payload, signature)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ParseWebhookEvent")
@@ -174,19 +174,19 @@ func (_m *StripeProxy) ParseWebhookEvent(payload []byte, signature string) (*pro
 
 	var r0 *proxy.WebhookEvent
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]byte, string) (*proxy.WebhookEvent, error)); ok {
-		return rf(payload, signature)
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, string) (*proxy.WebhookEvent, error)); ok {
+		return rf(ctx, payload, signature)
 	}
-	if rf, ok := ret.Get(0).(func([]byte, string) *proxy.WebhookEvent); ok {
-		r0 = rf(payload, signature)
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, string) *proxy.WebhookEvent); ok {
+		r0 = rf(ctx, payload, signature)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proxy.WebhookEvent)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]byte, string) error); ok {
-		r1 = rf(payload, signature)
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, string) error); ok {
+		r1 = rf(ctx, payload, signature)
 	} else {
 		r1 = ret.Error(1)
 	}

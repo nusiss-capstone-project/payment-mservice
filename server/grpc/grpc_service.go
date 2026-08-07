@@ -14,7 +14,7 @@ type PaymentService struct {
 }
 
 func (s *PaymentService) SayHello(ctx context.Context, in *paymentpb.HelloRequest) (*paymentpb.HelloResponse, error) {
-	log.Logger.Infof("Received: %v", in.GetName())
+	log.WithContext(ctx).Infow("grpc say hello received", "name", in.GetName())
 	return &paymentpb.HelloResponse{Message: "Hello " + in.GetName()}, nil
 }
 

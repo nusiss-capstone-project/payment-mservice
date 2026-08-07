@@ -94,7 +94,7 @@ type StripeProxy interface {
 
 	GetPaymentMethodBySetupIntent(ctx context.Context, setupIntentID string) (*PaymentMethodInfo, error)
 
-	ParseWebhookEvent(payload []byte, signature string) (*WebhookEvent, error)
+	ParseWebhookEvent(ctx context.Context, payload []byte, signature string) (*WebhookEvent, error)
 }
 
 type stripeProxyImpl struct {
@@ -253,9 +253,9 @@ func (s *stripeProxyImpl) GetPaymentMethodBySetupIntent(ctx context.Context, set
 	return info, nil
 }
 
-func (s *stripeProxyImpl) ParseWebhookEvent(payload []byte, signature string) (*WebhookEvent, error) {
+func (s *stripeProxyImpl) ParseWebhookEvent(ctx context.Context, payload []byte, signature string) (*WebhookEvent, error) {
 	// signature / webhook secret are sensitive — do not log them
-	log.Logger.Infow("stripe parse webhook request", "payload_len", len(payload))
+	log.WithContext(ctx).Infow("stripe parse webhook request", "payload_len", len(payload))
 
 	if s.webhookSecret == "" {
 		return nil, fmt.Errorf("stripe webhook secret is not configured")
@@ -265,13 +265,13 @@ func (s *stripeProxyImpl) ParseWebhookEvent(payload []byte, signature string) (*
 		IgnoreAPIVersionMismatch: true,
 	})
 	if err != nil {
-		log.Logger.Errorw("stripe parse webhook failed", "payload_len", len(payload), "error", err)
+		log.WithContext(ctx).Errorw("stripe parse webhook failed", "payload_len", len(payload), "error", err)
 		return nil, fmt.Errorf("construct stripe webhook event: %w", err)
 	}
 
 	out := &WebhookEvent{EventType: string(event.Type)}
 	if event.Data == nil {
-		log.Logger.Infow("stripe parse webhook response", "event", out)
+		log.WithContext(ctx).Infow("stripe parse webhook response", "event", out)
 		return out, nil
 	}
 
@@ -279,7 +279,7 @@ func (s *stripeProxyImpl) ParseWebhookEvent(payload []byte, signature string) (*
 	case strings.HasPrefix(string(event.Type), "payment_intent."):
 		var pi stripe.PaymentIntent
 		if err := json.Unmarshal(event.Data.Raw, &pi); err != nil {
-			log.Logger.Errorw("stripe unmarshal payment_intent webhook failed",
+			log.WithContext(ctx).Errorw("stripe unmarshal payment_intent webhook failed",
 				"event_type", event.Type, "error", err)
 			return nil, fmt.Errorf("unmarshal payment_intent webhook: %w", err)
 		}
@@ -290,7 +290,7 @@ func (s *stripeProxyImpl) ParseWebhookEvent(payload []byte, signature string) (*
 	case string(event.Type) == "checkout.session.completed":
 		var sess stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
-			log.Logger.Errorw("stripe unmarshal checkout.session webhook failed",
+			log.WithContext(ctx).Errorw("stripe unmarshal checkout.session webhook failed",
 				"event_type", event.Type, "error", err)
 			return nil, fmt.Errorf("unmarshal checkout.session webhook: %w", err)
 		}
@@ -306,7 +306,7 @@ func (s *stripeProxyImpl) ParseWebhookEvent(payload []byte, signature string) (*
 		}
 	}
 
-	log.Logger.Infow("stripe parse webhook response", "event", out)
+	log.WithContext(ctx).Infow("stripe parse webhook response", "event", out)
 	return out, nil
 }
 

@@ -27,7 +27,6 @@ func main() {
 	repository.Init()
 	proxy.InitStripe()
 	proxy.InitUserProxy()
-	producer.Ensure()
 
 	shutdownTelemetry := telemetry.Init(context.Background())
 	defer func() {
@@ -37,6 +36,8 @@ func main() {
 			log.Logger.Errorw("telemetry shutdown failed", "error", err)
 		}
 	}()
+
+	producer.Ensure()
 
 	go grpc.Init(sigCh)
 	go http.Init(sigCh)

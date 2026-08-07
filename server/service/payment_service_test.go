@@ -297,7 +297,7 @@ func TestHandleStripeWebhook_SetupCompleted(t *testing.T) {
 	eventProducer := new(mockPaymentMethodAddedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, userProxy, accountDAO, methodDAO, nil, eventProducer, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType:     "checkout.session.completed",
 		Mode:          checkoutSessionModeSetup,
 		SetupIntentID: "seti_1",
@@ -334,7 +334,7 @@ func TestHandleStripeWebhook_IgnoreWhenAlreadyBound(t *testing.T) {
 	methodDAO := new(daomocks.PaymentMethodDAO)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, nil, nil, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType:     "checkout.session.completed",
 		Mode:          checkoutSessionModeSetup,
 		SetupIntentID: "seti_1",
@@ -355,7 +355,7 @@ func TestHandleStripeWebhook_IgnoreNonSetupMode(t *testing.T) {
 	methodDAO := new(daomocks.PaymentMethodDAO)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, nil, nil, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "checkout.session.completed",
 		Mode:      "payment",
 	}, nil)
@@ -370,7 +370,7 @@ func TestHandleStripeWebhook_ParseError(t *testing.T) {
 	stripeProxy := new(proxymocks.StripeProxy)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), nil, nil, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("bad"), "sig").Return(nil, errors.New("bad signature"))
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("bad"), "sig").Return(nil, errors.New("bad signature"))
 
 	err := svc.HandleStripeWebhook(context.Background(), []byte("bad"), "sig")
 	require.Error(t, err)
@@ -383,7 +383,7 @@ func TestHandleStripeWebhook_PaymentIntentSucceeded_SkipKafkaWhenAlreadyTerminal
 	txProducer := new(mockPaymentTransactionUpdatedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, txProducer)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		PaymentID: "pi_1",
 		Status:    "succeeded",
@@ -410,7 +410,7 @@ func TestHandleStripeWebhook_PaymentIntentSucceeded_PublishKafkaFromPending(t *t
 	txProducer := new(mockPaymentTransactionUpdatedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, txProducer)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		PaymentID: "pi_1",
 		Status:    "succeeded",
@@ -617,7 +617,7 @@ func TestHandleStripeWebhook_PaymentFailed_PublishKafka(t *testing.T) {
 	txProducer := new(mockPaymentTransactionUpdatedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, txProducer)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.payment_failed",
 		PaymentID: "pi_1",
 		Status:    "requires_payment_method",
@@ -645,7 +645,7 @@ func TestHandleStripeWebhook_PaymentIntent_MissingMetaAndNotFound(t *testing.T) 
 	txDAO := new(daomocks.TransactionDAO)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("a"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("a"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		Metadata:  map[string]string{},
 	}, nil).Once()
@@ -653,7 +653,7 @@ func TestHandleStripeWebhook_PaymentIntent_MissingMetaAndNotFound(t *testing.T) 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "metadata.payment_id")
 
-	stripeProxy.On("ParseWebhookEvent", []byte("b"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("b"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		Metadata:  map[string]string{"payment_id": "pay_missing_____"},
 	}, nil).Once()
@@ -669,7 +669,7 @@ func TestHandleStripeWebhook_PaymentIntent_SkipKafkaWhenPrevTerminalChanged(t *t
 	txProducer := new(mockPaymentTransactionUpdatedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, txProducer)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		Status:    "succeeded",
 		Metadata:  map[string]string{"payment_id": "pay1234567890123"},
@@ -694,7 +694,7 @@ func TestHandleStripeWebhook_PaymentIntent_PublishError(t *testing.T) {
 	txProducer := new(mockPaymentTransactionUpdatedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), txDAO, nil, txProducer)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "payment_intent.succeeded",
 		Status:    "succeeded",
 		Metadata:  map[string]string{"payment_id": "pay1234567890123"},
@@ -721,18 +721,18 @@ func TestHandleStripeWebhook_SetupErrorPaths(t *testing.T) {
 	eventProducer := new(mockPaymentMethodAddedProducer)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), methodDAO, nil, eventProducer, nil)
 
-	stripeProxy.On("ParseWebhookEvent", []byte("1"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("1"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "checkout.session.completed", Mode: checkoutSessionModeSetup,
 	}, nil).Once()
 	require.Error(t, svc.HandleStripeWebhook(context.Background(), []byte("1"), "sig"))
 
-	stripeProxy.On("ParseWebhookEvent", []byte("2"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("2"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "checkout.session.completed", Mode: checkoutSessionModeSetup, SetupIntentID: "seti_1",
 		Metadata: map[string]string{"user_id": "bad"},
 	}, nil).Once()
 	require.Error(t, svc.HandleStripeWebhook(context.Background(), []byte("2"), "sig"))
 
-	stripeProxy.On("ParseWebhookEvent", []byte("3"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("3"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "checkout.session.completed", Mode: checkoutSessionModeSetup, SetupIntentID: "seti_1",
 		CustomerID: "cus_fallback", Metadata: map[string]string{"user_id": "42"},
 	}, nil).Once()
@@ -753,7 +753,7 @@ func TestHandleStripeWebhook_IgnoreUnknownEvent(t *testing.T) {
 	initPaymentTestEnv()
 	stripeProxy := new(proxymocks.StripeProxy)
 	svc := newPaymentServiceForTest(stripeProxy, new(proxymocks.UserProxy), new(daomocks.PaymentAccountDAO), new(daomocks.PaymentMethodDAO), nil, nil, nil)
-	stripeProxy.On("ParseWebhookEvent", []byte("payload"), "sig").Return(&proxy.WebhookEvent{
+	stripeProxy.On("ParseWebhookEvent", mock.Anything, []byte("payload"), "sig").Return(&proxy.WebhookEvent{
 		EventType: "customer.created",
 	}, nil)
 	require.NoError(t, svc.HandleStripeWebhook(context.Background(), []byte("payload"), "sig"))

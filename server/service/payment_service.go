@@ -265,7 +265,7 @@ func (p *PaymentServiceImpl) GetTransaction(ctx context.Context, userID int64, p
 }
 
 func (p *PaymentServiceImpl) HandleStripeWebhook(ctx context.Context, payload []byte, signature string) error {
-	event, err := p.stripeProxy.ParseWebhookEvent(payload, signature)
+	event, err := p.stripeProxy.ParseWebhookEvent(ctx, payload, signature)
 	if err != nil {
 		log.WithContext(ctx).Errorw("parse stripe webhook failed", "error", err)
 		return err
