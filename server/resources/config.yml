@@ -1,12 +1,26 @@
 grpc:
   host: "0.0.0.0"
-  port: 5001
+  port: 5002
   connect_timeout: 3
   max_pool_size: 200
 
+identity:
+  host: "localhost"
+  port: 5001
+
 http:
   host: "0.0.0.0"
-  port: 8080
+  port: 8081
+
+stripe:
+  setup_success_url: "http://localhost:3000/payment/setup"
+  setup_cancel_url: "http://localhost:3000/payment/setup?setup=cancelled"
+
+kafka:
+  enabled: false
+  brokers:
+    - localhost:9092
+  client_id: payment-mservice
 
 log:
   level: debug

@@ -41,10 +41,10 @@ func (dao *ItemDaoImpl) Create(ctx context.Context, item *model.Item) (int, erro
 		if errors.Is(ret.Error, gorm.ErrDuplicatedKey) {
 			return 0, errors.New("item already exists")
 		}
-		log.Logger.Errorf("Failed to create item: %v", ret.Error)
+		log.WithContext(ctx).Errorw("Failed to create item", "error", ret.Error)
 		return 0, ret.Error
 	}
-	log.Logger.Infof("item created with ID: %d", item.ID)
+	log.WithContext(ctx).Infow("item created", "id", item.ID)
 	return item.ID, nil
 }
 
@@ -55,7 +55,7 @@ func (dao *ItemDaoImpl) GetById(ctx context.Context, id int) (*model.Item, error
 		if errors.Is(ret.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-		log.Logger.Errorf("Failed to get item by email: %v", ret.Error)
+		log.WithContext(ctx).Errorw("Failed to get item by id", "id", id, "error", ret.Error)
 		return nil, ret.Error
 	}
 	return &item, nil
