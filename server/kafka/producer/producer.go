@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nusiss-capstone-project/payment-mservice/server/config"
+	"github.com/nusiss-capstone-project/payment-mservice/server/kafka"
 	kafkatrace "github.com/nusiss-capstone-project/payment-mservice/server/kafka/trace"
 	"github.com/nusiss-capstone-project/payment-mservice/server/log"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -64,11 +65,15 @@ func buildProducer(cfg *config.KafkaConfig) KafkaProducer {
 		return nopKafkaProducer{}
 	}
 
-	log.Logger.Infow("kafka producer initialized", "brokers", cfg.Brokers)
+	log.Logger.Infow("kafka producer initialized",
+		"brokers", cfg.Brokers,
+		"topic_prefix", kafka.TopicPrefix(),
+	)
 	return &kafkaProducerImpl{client: client}
 }
 
 func (p *kafkaProducerImpl) Publish(ctx context.Context, topic string, key, value []byte) error {
+	topic = kafka.PrefixedTopic(topic)
 	if topic == "" {
 		return errors.New("topic is empty")
 	}
