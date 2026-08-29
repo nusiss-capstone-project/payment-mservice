@@ -43,7 +43,7 @@ func (ls *ItemServiceImpl) CreateItem(ctx context.Context, itemVo *data.ItemVO) 
 	}
 	id, err := ls.itemDao.Create(ctx, item)
 	if err != nil {
-		log.Logger.Errorf("Failed to create item: %v", err)
+		log.WithContext(ctx).Errorw("Failed to create item", "error", err)
 		return 0, fmt.Errorf("failed to create item: %w", err)
 	}
 	return id, nil
@@ -52,7 +52,7 @@ func (ls *ItemServiceImpl) CreateItem(ctx context.Context, itemVo *data.ItemVO) 
 func (ls *ItemServiceImpl) GetItemById(ctx context.Context, id int) (*data.ItemVO, error) {
 	item, err := ls.itemDao.GetById(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("Failed to get item by ID: %v", err)
+		log.WithContext(ctx).Errorw("Failed to get item by ID", "error", err)
 		return nil, fmt.Errorf("failed to get item by ID: %w", err)
 	}
 	if item == nil {

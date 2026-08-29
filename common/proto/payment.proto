@@ -4,8 +4,10 @@ package paymentpb;
 
 option go_package = "/paymentpb;paymentpb";
 
+
 service PaymentService {
   rpc SayHello (HelloRequest) returns (HelloResponse);
+  rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
 }
 
 message HelloRequest {
@@ -14,4 +16,31 @@ message HelloRequest {
 
 message HelloResponse {
   string message = 1;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_OK = 1;
+  ERROR_CODE_INVALID_ARGUMENT = 2;
+  ERROR_CODE_NOT_FOUND = 3;
+  ERROR_CODE_INTERNAL = 4;
+}
+
+message BaseResponseInfo {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
+message CreatePaymentRequest {
+  string bizId = 1;
+  int64 userId = 2;
+  int64 amount = 3;
+  string currency = 4;
+  int64 paymentMethodId = 5;
+}
+
+message CreatePaymentResponse {
+  string paymentId = 1;
+  string status = 2;
+  BaseResponseInfo baseInfo = 255;
 }
