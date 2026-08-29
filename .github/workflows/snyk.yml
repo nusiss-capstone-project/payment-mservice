@@ -1,0 +1,63 @@
+name: Snyk
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  snyk:
+    name: Snyk Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect Snyk token
+        id: snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -n "${SNYK_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-go@v5
+        if: steps.snyk.outputs.enabled == 'true'
+        with:
+          go-version-file: server/go.mod
+      - uses: actions/cache@v4
+        if: steps.snyk.outputs.enabled == 'true'
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      - name: Install Snyk CLI
+        if: steps.snyk.outputs.enabled == 'true'
+        run: npm install -g snyk
+      - name: Snyk test
+        if: steps.snyk.outputs.enabled == 'true'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          mkdir -p sarif-reports
+          find . -name "go.mod" -execdir sh -c 'snyk test --file=go.mod --severity-threshold=high --sarif-file-output=../sarif-reports/snyk-$(basename "$(pwd)").sarif' \;
+      - name: Upload Snyk SARIF file
+        if: steps.snyk.outputs.enabled == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif-reports/snyk-server.sarif
+      - name: Snyk monitor
+        if: steps.snyk.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: find . -name "go.mod" -execdir snyk monitor --file=go.mod \;
